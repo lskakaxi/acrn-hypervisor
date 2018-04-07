@@ -34,7 +34,7 @@
 struct shared_buf;
 
 /* Maximum serial devices supported by the platform. */
-#define SERIAL_MAX_DEVS                 1
+#define SERIAL_MAX_DEVS                 2
 
 /* Maximum length of unique id of each UART port enabled in platform. */
 #define SERIAL_ID_MAX_LENGTH            8

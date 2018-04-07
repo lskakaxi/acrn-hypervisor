@@ -39,6 +39,7 @@ typedef struct {
 struct efi_ctx {
 	uint64_t rip;
 	void *rsdp;
+	void *systab;
 	dt_addr_t  gdt;
 	dt_addr_t  idt;
 	uint16_t   tr_sel;

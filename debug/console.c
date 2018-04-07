@@ -60,7 +60,11 @@ int console_init(void)
 {
 	spinlock_init(&lock);
 
+#ifdef CONFIG_EFI_STUB
+	serial_handle = serial_open("UEFICON");
+#else
 	serial_handle = serial_open("STDIO");
+#endif
 
 	return 0;
 }

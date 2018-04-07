@@ -253,6 +253,7 @@ switch_to_guest_mode(EFI_HANDLE image)
 	}
 
 	efi_ctx->rsdp = rsdp;
+	efi_ctx->systab = sys_table;
 
 	/* construct multiboot info and deliver it to hypervisor */
 	err = construct_mbi(&mbi, efi_ctx);

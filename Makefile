@@ -30,6 +30,7 @@ CFLAGS += -mno-red-zone
 CFLAGS += -static -nostdinc -nostdlib -fno-common
 CFLAGS += -O2 -D_FORTIFY_SOURCE=2
 CFLAGS += -Wformat -Wformat-security
+CFLAGS += -I/usr/include -I/usr/include/efi -I/usr/include/efi/x86_64
 
 ifdef STACK_PROTECTOR
 ifeq (true, $(shell [ $(GCC_MAJOR) -gt 4 ] && echo true))
@@ -48,7 +49,7 @@ ASFLAGS += -m64 -nostdinc -nostdlib
 
 LDFLAGS += -Wl,--gc-sections -static -nostartfiles -nostdlib
 LDFLAGS += -Wl,-n,-z,max-page-size=0x1000
-LDFLAGS += -Wl,-z,noexecstack
+LDFLAGS += -Wl,-z,noexecstack /usr/lib64/crt0-efi-x86_64.o
 
 ARCH_CFLAGS += -gdwarf-2 -O0
 ARCH_ASFLAGS += -gdwarf-2 -DASSEMBLER=1
@@ -148,6 +149,7 @@ C_SRCS += bsp/$(PLATFORM)/$(PLATFORM).c
 
 ifeq ($(PLATFORM),uefi)
 C_SRCS += bsp/$(PLATFORM)/cmdline.c
+C_SRCS += bsp/$(PLATFORM)/efi_stub.S
 endif
 
 # retpoline support

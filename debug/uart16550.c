@@ -31,6 +31,9 @@
 #include <hv_lib.h>
 #include <acrn_common.h>
 #include <hv_arch.h>
+#include <hv_debug.h>
+#include <efi.h>
+#include <acrn_efi.h>
 
 #include "uart16550.h"
 #include "serial_internal.h"
@@ -321,6 +324,92 @@ static bool uart16550_rx_data_is_avail(struct tgt_uart *tgt_uart,
 	return ((*(uart_reg_t *)lsr_reg & LSR_DR) == LSR_DR) ? true : false;
 }
 
+extern struct efi_ctx* efi_ctx;
+EFI_SYSTEM_TABLE *systab;
+/* EFI_BOOT_SERVICES *efi_bs; */
+
+static EFI_FILE_PROTOCOL *FileHandle;
+static int uefi_console_init(struct tgt_uart *tgt_uart)
+{
+	systab = efi_ctx->systab;
+	/* efi_bs= systab->BootServices; */
+	return 0;
+}
+
+static int uefi_console_open(struct tgt_uart *tgt_uart,
+			struct uart_config *config)
+{
+	/*
+	EFI_GUID gEfiSimpleFileSystemProtocolGuid =
+		EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *SimpleFileSystem;
+	EFI_FILE_PROTOCOL *Root;
+
+	uefi_call_wrapper(efi_bs->LocateProtocol,
+			3,
+			&gEfiSimpleFileSystemProtocolGuid,
+			NULL,
+			(void **)&SimpleFileSystem);
+
+	uefi_call_wrapper(SimpleFileSystem->OpenVolume,
+			2,
+			SimpleFileSystem, &Root);
+	uefi_call_wrapper(Root->Open,
+			5,
+			Root, &FileHandle, L"hv.log",
+			EFI_FILE_MODE_CREATE | EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE,
+			0);
+	*/
+	return 0;
+}
+
+static void uefi_console_close(struct tgt_uart *tgt_uart)
+{
+	/* uefi_call_wrapper(FileHandle->Close, 1, FileHandle); */
+}
+
+static void uefi_console_read(struct tgt_uart *tgt_uart, void *buffer,
+		uint32_t *bytes_read)
+{
+}
+
+static void uefi_console_write(struct tgt_uart *tgt_uart,
+		const void *buffer, uint32_t *bytes_written)
+{
+	unsigned short u_char[2];
+
+	u_char[0] = *(char *)buffer;
+	u_char[1] = 0;
+
+	uefi_call_wrapper(systab->ConOut->OutputString,
+			2, systab->ConOut, u_char);
+	/*
+	uefi_call_wrapper(FileHandle->Write,
+			3, FileHandle, &size, Textbuf);
+	uefi_call_wrapper(FileHandle->Flush,
+			1, FileHandle);
+	*/
+
+	if (bytes_written != NULL)
+		*bytes_written = 1;
+}
+
+static bool uefi_console_tx_is_busy(struct tgt_uart *tgt_uart)
+{
+	return false;
+}
+
+static bool uefi_console_rx_data_is_avail(struct tgt_uart *tgt_uart,
+			uint32_t *lsr_reg)
+{
+	return false;
+}
+
+static int uefi_console_get_rx_err(uint32_t rx_data)
+{
+	return SD_RX_NO_ERROR;
+}
+
 struct tgt_uart Tgt_Uarts[SERIAL_MAX_DEVS] = {
 	{
 		.uart_id		= "STDIO",
@@ -335,6 +424,19 @@ struct tgt_uart Tgt_Uarts[SERIAL_MAX_DEVS] = {
 		.tx_is_busy		= uart16550_tx_is_busy,
 		.rx_data_is_avail	= uart16550_rx_data_is_avail,
 		.get_rx_err		= uart16550_get_rx_err,
+
+	},
+	{
+		.uart_id		= "UEFICON",
+		.buffer_size		= UART_BUFFER_SIZE,
+		.init			= uefi_console_init,
+		.open			= uefi_console_open,
+		.close			= uefi_console_close,
+		.read			= uefi_console_read,
+		.write			= uefi_console_write,
+		.tx_is_busy		= uefi_console_tx_is_busy,
+		.rx_data_is_avail	= uefi_console_rx_data_is_avail,
+		.get_rx_err		= uefi_console_get_rx_err,
 
 	}
 };
